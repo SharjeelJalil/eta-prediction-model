@@ -1,0 +1,85 @@
+# ETA Model v5.7.5 Configuration
+# All hyperparameters and thresholds used in production
+
+random_seed: 42
+
+# ── Smoothing Strength (N0) ──
+# Controls shrinkage toward parent in hierarchical smoothing.
+# Higher N0 = more conservative (pulls toward parent more).
+smoothing:
+  t2a_osrm_ratio: 60
+  t3_osrm_ratio: 30
+  t3_extended_prior: 80
+  t2b_shop_hour_dow: 80
+  t2b_prep_prior: 120
+  t2_bias: 250
+
+# ── Recency Weighting (Half-Life in Days) ──
+# Exponential decay: weight halves every N days from the reference date.
+recency_half_life:
+  t2a: 21
+  t3: 21
+  t2b_prep: 28
+  bias: 10
+
+# ── Prediction Guardrails (minutes) ──
+guardrails:
+  t2a: { min: 0.0, max: 120.0 }
+  t2b: { min: 0.0, max: 90.0 }
+  t2_total: { min: 0.5, max: 240.0 }
+  t3: { min: 0.5, max: 180.0 }
+  t4_dwell: { min: 0.0, max: 60.0 }
+
+# ── T1 Model (GradientBoostingRegressor) ──
+t1_model:
+  loss: quantile
+  alpha: 0.5
+  max_depth: 4
+  n_estimators: 600
+  min_samples_leaf: 20
+
+# ── T2b Residual Model ──
+t2b_residual:
+  loss: quantile
+  alpha: 0.5
+  max_depth: 4
+  n_estimators: 500
+  min_samples_leaf: 25
+  min_training_rows: 1000
+
+# ── T2 Bias Correction ──
+bias_correction:
+  abs_cap: 5.0          # max correction magnitude (minutes)
+  min_abs_threshold: 0.5 # ignore corrections below this
+  min_cell_count: 12     # require at least this many observations
+
+# ── Distance Binning ──
+distance_bins:
+  edges: [0, 1, 2, 4, 6, 8, 12, 20, 1e9]
+  labels: ["<1", "1-2", "2-4", "4-6", "6-8", "8-12", "12-20", "20+"]
+
+# ── Peak Hours ──
+peak_hours: [14, 15, 16, 17, 18, 19, 20, 21, 22]
+
+# ── T3 Coordinate Quality Thresholds ──
+coord_qa:
+  ksa_lat_range: [16.0, 33.5]
+  ksa_lon_range: [34.0, 57.0]
+  mismatch_min_km: 2.0
+  mismatch_ratio_hi: 3.0
+  mismatch_ratio_lo: 0.33
+  osrm_zero_haversine_min_km: 1.0
+
+# ── OSRM Enrichment ──
+osrm:
+  base_url: "http://localhost:5001"
+  max_workers: 16
+  timeout_seconds: 4
+  retries: 2
+  coord_round_places: 5
+
+# ── Data Sanity Bounds (minutes) ──
+actual_time_bounds:
+  t1: { min: 0.1, max: 60 }
+  t2: { min: 0.2, max: 60 }
+  t3: { min: 0.5, max: 150 }
